@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A single shop transaction recorded by a user.",
+      "type": "object",
+      "properties": {
+        "productName": { "type": "string", "description": "Name of the product bought" },
+        "category": { "type": "string", "description": "Category of the product" },
+        "price": { "type": "number", "description": "Total price of the product(s)" },
+        "quantity": { "type": "number", "description": "Quantity of the product bought" },
+        "gender": { "type": "string", "enum": ["Male", "Female"], "description": "Gender of the customer" },
+        "age": { "type": "string", "enum": ["Kid", "Teen", "Adult"], "description": "Age group of the customer" },
+        "vehicle": { "type": "string", "enum": ["Car", "Bike", "Cycle", "None"], "description": "Vehicle used by the customer" },
+        "timestamp": { "type": "number", "description": "Time of the transaction" },
+        "userId": { "type": "string", "description": "UID of the user who recorded this" }
+      },
+      "required": ["productName", "category", "price", "quantity", "gender", "age", "timestamp", "userId"]
+    },
+    "ShopMemory": {
+      "title": "Shop Memory",
+      "description": "AI-generated memory and facts about the shop.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user" },
+        "facts": { "type": "array", "items": { "type": "string" }, "description": "List of facts learned by the AI" },
+        "shopDescription": { "type": "string", "description": "AI-generated description of the shop from photos" },
+        "photos": { "type": "array", "items": { "type": "string" }, "description": "Base64 encoded photos of the shop" },
+        "lastUpdated": { "type": "number", "description": "Timestamp of last update" }
+      },
+      "required": ["userId", "facts", "shopDescription", "lastUpdated"]
+    }
+  },
+  "firestore": {
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Collection of all shop transactions"
+    },
+    "/shop_memory/{userId}": {
+      "schema": "ShopMemory",
+      "description": "Memory and context for the AI Assistant"
+    }
+  }
+}

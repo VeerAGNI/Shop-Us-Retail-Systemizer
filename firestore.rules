@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: transactions
+    // Document ID: auto-generated
+    // Fields:
+    //   - productName: string (required, 1-100 chars)
+    //   - category: string (required, enum)
+    //   - price: number (required, positive)
+    //   - quantity: number (required, positive)
+    //   - gender: string (required, Male|Female)
+    //   - age: string (required, Kid|Teen|Adult)
+    //   - vehicle: string (optional, Car|Bike|Cycle|None)
+    //   - timestamp: number (required)
+    //   - userId: string (required, matches auth.uid)
+    //
+    // Collection: shop_memory
+    // Document ID: userId
+    // Fields:
+    //   - userId: string (required, matches auth.uid)
+    //   - facts: list (required)
+    //   - shopDescription: string (required)
+    //   - photos: list (optional, base64 strings)
+    //   - lastUpdated: number (required)
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['productName', 'category', 'price', 'quantity', 'gender', 'age', 'timestamp', 'userId']) &&
+             data.productName is string && data.productName.size() > 0 && data.productName.size() <= 100 &&
+             data.category in ['Groceries', 'Snacks', 'Beverages', 'Personal Care', 'Household', 'Other'] &&
+             data.price is number && data.price >= 0 &&
+             data.quantity is number && data.quantity > 0 &&
+             data.gender in ['Male', 'Female'] &&
+             data.age in ['Kid', 'Teen', 'Adult'] &&
+             (!('vehicle' in data) || data.vehicle in ['Car', 'Bike', 'Cycle', 'None']) &&
+             data.timestamp is number &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidMemory(data, userId) {
+      return data.keys().hasAll(['userId', 'facts', 'shopDescription', 'lastUpdated']) &&
+             data.userId == userId &&
+             data.facts is list &&
+             data.shopDescription is string &&
+             (!('photos' in data) || data.photos is list) &&
+             data.lastUpdated is number;
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && isValidTransaction(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid && isValidTransaction(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+    
+    match /shop_memory/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidMemory(request.resource.data, userId);
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Shop Tracker Pro",
+  "description": "Track customer purchases and demographics to gain insights for shop optimization.",
+  "requestFramePermissions": ["microphone"]
+}
